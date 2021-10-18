@@ -50,7 +50,8 @@ describe("CryptoZombies", function () {
   });
 
   describe("Feed & Multiply", function () {
-    // calledOnContract Currently not supported by hardhat
+    // calledOnContract matcher currently not supported by hardhat
+    //
     // it("Should be able to set Kitty contract address", async () => {
     //   await cryptoZombies.setKittyContractAddress(kittyContractAddress);
     //   expect("setKittyContractAddress").to.be.calledOnContractWith(
@@ -59,9 +60,28 @@ describe("CryptoZombies", function () {
     //   );
     // });
 
-    // it("Should create new zombie after feeding", async () => {
+    it("Should create new zombie after feeding", async () => {
+      const zombieId = 0;
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      // Increase the time by 1 day to skip cooldown after zombie creation
+      await ethers.provider.send("evm_increaseTime", [86400]);
 
-    // });
+      await cryptoZombies.setKittyContractAddress(kittyContractAddress);
+      const prevZombies = await cryptoZombies.getZombiesByOwner(owner.address);
+      await cryptoZombies.feedOnKitty(zombieId, testKittyId);
+      const currZombies = await cryptoZombies.getZombiesByOwner(owner.address);
+
+      await expect(currZombies.length - prevZombies.length).to.be.equal(1);
+    });
+
+    it("Should not be able to feed when on cooldown", async () => {
+      const zombieId = 0;
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      await cryptoZombies.setKittyContractAddress(kittyContractAddress);
+      await expect(
+        cryptoZombies.feedOnKitty(zombieId, testKittyId)
+      ).to.be.revertedWith("Wait for cooldown to pass.");
+    });
 
     it("Should not be able to feed on without setting Kitty contract address", async () => {
       const zombieId = 0;

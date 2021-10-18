@@ -64,6 +64,17 @@ describe("CryptoZombies", function () {
       ).to.be.revertedWith("Not owner of a zombie.");
     });
 
+    it("Should be able to change zombie name", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      // Call levelUp because we cant change name if zombie level is 1
+      await cryptoZombies.levelUp(firstZombieId, {
+        value: ethers.utils.parseEther("0.0005"),
+      });
+      await cryptoZombies.changeName(firstZombieId, "newName");
+      const zombieData = await cryptoZombies.zombies(firstZombieId);
+      expect(zombieData.name).to.be.equal("newName");
+    });
+
     it("Should be able to levelUp a zombie", async () => {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
       await cryptoZombies.levelUp(firstZombieId, {

@@ -69,7 +69,7 @@ describe("CryptoZombies", function () {
       const secondZombieId = 1;
       await cryptoZombies.connect(alice).createRandomZombie(zombieNames[1]);
 
-      // Increasing time for 1 day to skip cooldown after zombie creation
+      // Increase the time by 1 day to skip cooldown after zombie creation
       await ethers.provider.send("evm_increaseTime", [86400]);
 
       await expect(cryptoZombies.attack(firstZombieId, secondZombieId))

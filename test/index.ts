@@ -16,13 +16,8 @@ describe("CryptoZombies", function () {
   const secondZombieId = 1;
   const testKittyId: number = 1;
 
-  beforeEach(async () => {
+  before(async () => {
     [owner, alice, bob, ...addrs] = await ethers.getSigners();
-
-    const CryptoZombies = await ethers.getContractFactory("CryptoZombies");
-    cryptoZombies = await CryptoZombies.deploy();
-    await cryptoZombies.deployed();
-
     const CryptoKitties = await ethers.getContractFactory("KittyCore");
     cryptoKitties = await CryptoKitties.deploy();
     await cryptoKitties.deployed();
@@ -30,6 +25,12 @@ describe("CryptoZombies", function () {
 
     // Creating a new cat to use it in further tests
     await cryptoKitties.createPromoKitty(1234, owner.address);
+  });
+
+  beforeEach(async () => {
+    const CryptoZombies = await ethers.getContractFactory("CryptoZombies");
+    cryptoZombies = await CryptoZombies.deploy();
+    await cryptoZombies.deployed();
   });
 
   describe("Creating a zombie", function () {

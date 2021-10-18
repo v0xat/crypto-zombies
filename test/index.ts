@@ -45,6 +45,19 @@ describe("CryptoZombies", function () {
         cryptoZombies.createRandomZombie(zombieNames[1])
       ).to.be.revertedWith("Should not have zombies to create a new one.");
     });
+  });
+
+  describe("Change Name", function () {
+    it("Should be able to change zombie name", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      // Call levelUp because we cant change name if zombie level is 1
+      await cryptoZombies.levelUp(firstZombieId, {
+        value: ethers.utils.parseEther("0.0005"),
+      });
+      await cryptoZombies.changeName(firstZombieId, "newName");
+      const zombieData = await cryptoZombies.zombies(firstZombieId);
+      expect(zombieData.name).to.be.equal("newName");
+    });
 
     it("Should not be able to change zombie name below level 2", async () => {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
@@ -63,18 +76,9 @@ describe("CryptoZombies", function () {
         cryptoZombies.connect(alice).changeName(firstZombieId, "newName")
       ).to.be.revertedWith("Not owner of a zombie.");
     });
+  });
 
-    it("Should be able to change zombie name", async () => {
-      await cryptoZombies.createRandomZombie(zombieNames[0]);
-      // Call levelUp because we cant change name if zombie level is 1
-      await cryptoZombies.levelUp(firstZombieId, {
-        value: ethers.utils.parseEther("0.0005"),
-      });
-      await cryptoZombies.changeName(firstZombieId, "newName");
-      const zombieData = await cryptoZombies.zombies(firstZombieId);
-      expect(zombieData.name).to.be.equal("newName");
-    });
-
+  describe("Level Up", function () {
     it("Should be able to levelUp a zombie", async () => {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
       await cryptoZombies.levelUp(firstZombieId, {
@@ -82,6 +86,15 @@ describe("CryptoZombies", function () {
       });
       const zombieData = await cryptoZombies.zombies(firstZombieId);
       expect(zombieData.level).to.be.equal(2);
+    });
+
+    it("Should not be able to levelUp with insufficient ether", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      await expect(
+        cryptoZombies.levelUp(firstZombieId, {
+          value: ethers.utils.parseEther("0.00045"),
+        })
+      ).to.be.revertedWith("Not enough ether.");
     });
   });
 

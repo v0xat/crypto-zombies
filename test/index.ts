@@ -45,6 +45,33 @@ describe("CryptoZombies", function () {
         cryptoZombies.createRandomZombie(zombieNames[1])
       ).to.be.revertedWith("Should not have zombies to create a new one.");
     });
+
+    it("Should not be able to change zombie name below level 2", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      await expect(
+        cryptoZombies.changeName(firstZombieId, "newName")
+      ).to.be.revertedWith("Zombie level is too low.");
+    });
+
+    it("Non owner should not be able to change zombie name", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      // Call levelUp because we cant change name if zombie level is 1
+      await cryptoZombies.levelUp(firstZombieId, {
+        value: ethers.utils.parseEther("0.0005"),
+      });
+      await expect(
+        cryptoZombies.connect(alice).changeName(firstZombieId, "newName")
+      ).to.be.revertedWith("Not owner of a zombie.");
+    });
+
+    it("Should be able to levelUp a zombie", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      await cryptoZombies.levelUp(firstZombieId, {
+        value: ethers.utils.parseEther("0.0005"),
+      });
+      const zombieData = await cryptoZombies.zombies(firstZombieId);
+      expect(zombieData.level).to.be.equal(2);
+    });
   });
 
   describe("Feed & Multiply", function () {

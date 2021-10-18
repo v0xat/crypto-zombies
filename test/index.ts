@@ -4,22 +4,31 @@ import { Contract } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
 describe("CryptoZombies", function () {
-  let cryptoZombies: Contract;
-
+  let cryptoZombies: Contract, cryptoKitties: Contract;
   let owner: SignerWithAddress,
     alice: SignerWithAddress,
     bob: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
   const zombieNames = ["Stubbs", "Gary"];
-  const kittyContractAddress = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d";
-  const testKittyId = 1;
+  let kittyContractAddress: string;
+  let testKittyId: number;
 
   beforeEach(async () => {
     [owner, alice, bob, ...addrs] = await ethers.getSigners();
+
     const CryptoZombies = await ethers.getContractFactory("CryptoZombies");
     cryptoZombies = await CryptoZombies.deploy();
     await cryptoZombies.deployed();
+
+    const CryptoKitties = await ethers.getContractFactory("KittyCore");
+    cryptoKitties = await CryptoKitties.deploy();
+    await cryptoKitties.deployed();
+    kittyContractAddress = cryptoKitties.address;
+
+    // Creating a new cat to use it in further tests
+    await cryptoKitties.createPromoKitty(1234, owner.address);
+    testKittyId = 1;
   });
 
   describe("Creating a zombie", function () {

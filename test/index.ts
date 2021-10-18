@@ -92,6 +92,20 @@ describe("CryptoZombies", function () {
   });
 
   describe("Battle system", function () {
+    it("Should be able to change attackVictoryProbability", async () => {
+      const newProb = 90;
+      await cryptoZombies.setAttackVictoryProbability(newProb);
+      const attackProb = await cryptoZombies.attackVictoryProbability();
+      await expect(attackProb.toNumber()).to.be.equal(newProb);
+    });
+
+    it("Non owner cannot change attackVictoryProbability", async () => {
+      const newProb = 90;
+      await expect(
+        cryptoZombies.connect(alice).setAttackVictoryProbability(newProb)
+      ).to.be.reverted;
+    });
+
     it("Zombie attack should emit event", async () => {
       const firstZombieId = 0;
       await cryptoZombies.createRandomZombie(zombieNames[0]);

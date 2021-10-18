@@ -5,14 +5,16 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 
 describe("CryptoZombies", function () {
   let cryptoZombies: Contract, cryptoKitties: Contract;
+  let kittyContractAddress: string;
   let owner: SignerWithAddress,
     alice: SignerWithAddress,
     bob: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
   const zombieNames = ["Stubbs", "Gary"];
-  let kittyContractAddress: string;
-  let testKittyId: number;
+  const firstZombieId = 0;
+  const secondZombieId = 1;
+  const testKittyId: number = 1;
 
   beforeEach(async () => {
     [owner, alice, bob, ...addrs] = await ethers.getSigners();
@@ -28,16 +30,12 @@ describe("CryptoZombies", function () {
 
     // Creating a new cat to use it in further tests
     await cryptoKitties.createPromoKitty(1234, owner.address);
-    testKittyId = 1;
   });
 
   describe("Creating a zombie", function () {
     it("Should be able to create a new zombie", async () => {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
-
-      const zombieId = 0;
-      const zombieOwner = await cryptoZombies.ownerOf(zombieId);
-
+      const zombieOwner = await cryptoZombies.ownerOf(firstZombieId);
       expect(zombieOwner).to.equal(owner.address);
     });
 
@@ -61,32 +59,29 @@ describe("CryptoZombies", function () {
     // });
 
     it("Should create new zombie after feeding", async () => {
-      const zombieId = 0;
       await cryptoZombies.createRandomZombie(zombieNames[0]);
       // Increase the time by 1 day to skip cooldown after zombie creation
       await ethers.provider.send("evm_increaseTime", [86400]);
 
       await cryptoZombies.setKittyContractAddress(kittyContractAddress);
-      const prevZombies = await cryptoZombies.getZombiesByOwner(owner.address);
-      await cryptoZombies.feedOnKitty(zombieId, testKittyId);
-      const currZombies = await cryptoZombies.getZombiesByOwner(owner.address);
+      const prevZombies = await cryptoZombies.ownerZombieCount(owner.address);
+      await cryptoZombies.feedOnKitty(firstZombieId, testKittyId);
+      const currZombies = await cryptoZombies.ownerZombieCount(owner.address);
 
-      await expect(currZombies.length - prevZombies.length).to.be.equal(1);
+      await expect(currZombies.toNumber() - prevZombies.toNumber()).to.be.equal(1);
     });
 
     it("Should not be able to feed when on cooldown", async () => {
-      const zombieId = 0;
       await cryptoZombies.createRandomZombie(zombieNames[0]);
       await cryptoZombies.setKittyContractAddress(kittyContractAddress);
       await expect(
-        cryptoZombies.feedOnKitty(zombieId, testKittyId)
+        cryptoZombies.feedOnKitty(firstZombieId, testKittyId)
       ).to.be.revertedWith("Wait for cooldown to pass.");
     });
 
     it("Should not be able to feed on without setting Kitty contract address", async () => {
-      const zombieId = 0;
       await cryptoZombies.createRandomZombie(zombieNames[0]);
-      await expect(cryptoZombies.feedOnKitty(zombieId, testKittyId)).to.be
+      await expect(cryptoZombies.feedOnKitty(firstZombieId, testKittyId)).to.be
         .reverted;
     });
   });
@@ -107,9 +102,7 @@ describe("CryptoZombies", function () {
     });
 
     it("Zombie attack should emit event", async () => {
-      const firstZombieId = 0;
       await cryptoZombies.createRandomZombie(zombieNames[0]);
-      const secondZombieId = 1;
       await cryptoZombies.connect(alice).createRandomZombie(zombieNames[1]);
 
       // Increase the time by 1 day to skip cooldown after zombie creation
@@ -125,13 +118,12 @@ describe("CryptoZombies", function () {
     describe("Single-step transfer scenario", function () {
       it("Should transfer a zombie", async () => {
         await cryptoZombies.createRandomZombie(zombieNames[0]);
-        const zombieId = 0;
         await cryptoZombies.transferFrom(
           owner.address,
           alice.address,
-          zombieId
+          firstZombieId
         );
-        const newOwner = await cryptoZombies.ownerOf(zombieId);
+        const newOwner = await cryptoZombies.ownerOf(firstZombieId);
         expect(newOwner).to.equal(alice.address);
       });
     });
@@ -139,24 +131,22 @@ describe("CryptoZombies", function () {
     describe("Two-step transfer scenario", function () {
       it("Should approve and then transfer a zombie when the approved address calls transferFrom", async () => {
         await cryptoZombies.createRandomZombie(zombieNames[0]);
-        const zombieId = 0;
-        await cryptoZombies.approve(alice.address, zombieId);
+        await cryptoZombies.approve(alice.address, firstZombieId);
         await cryptoZombies
           .connect(alice)
-          .transferFrom(owner.address, alice.address, zombieId);
-        const newOwner = await cryptoZombies.ownerOf(zombieId);
+          .transferFrom(owner.address, alice.address, firstZombieId);
+        const newOwner = await cryptoZombies.ownerOf(firstZombieId);
         expect(newOwner).to.equal(alice.address);
       });
       it("Should approve and then transfer a zombie when the owner calls transferFrom", async () => {
         await cryptoZombies.createRandomZombie(zombieNames[0]);
-        const zombieId = 0;
-        await cryptoZombies.approve(alice.address, zombieId);
+        await cryptoZombies.approve(alice.address, firstZombieId);
         await cryptoZombies.transferFrom(
           owner.address,
           alice.address,
-          zombieId
+          firstZombieId
         );
-        const newOwner = await cryptoZombies.ownerOf(zombieId);
+        const newOwner = await cryptoZombies.ownerOf(firstZombieId);
         expect(newOwner).to.equal(alice.address);
       });
     });

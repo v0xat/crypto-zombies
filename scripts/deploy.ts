@@ -1,4 +1,6 @@
-import { ethers } from "hardhat";
+import { ethers, artifacts } from "hardhat";
+import { Contract } from "ethers";
+import * as path from "path";
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -15,6 +17,27 @@ async function main() {
 
   console.log("CryptoZombies deployed to:", cryptoZombies.address);
 }
+
+const saveFrontendFiles = (cryptoZombies: Contract) => {
+  const fs = require("fs");
+  const contractsDir = path.join(__dirname, "/../frontend/src/contracts");
+
+  if (!fs.existsSync(contractsDir)) {
+    fs.mkdirSync(contractsDir);
+  }
+
+  fs.writeFileSync(
+    contractsDir + "/contract-address.json",
+    JSON.stringify({ CryptoZombies: cryptoZombies.address }, undefined, 2)
+  );
+
+  const CryptoZombiesArtifact = artifacts.readArtifactSync("CryptoZombies");
+
+  fs.writeFileSync(
+    contractsDir + "/CryptoZombies.json",
+    JSON.stringify(CryptoZombiesArtifact, null, 2)
+  );
+};
 
 main().catch((error) => {
   console.error(error);

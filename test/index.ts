@@ -11,6 +11,7 @@ describe("CryptoZombies", function () {
     bob: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
+  const defaultLevelUpFee = "0.0005";
   const zombieNames = ["Stubbs", "Gary"];
   const firstZombieId = 0;
   const secondZombieId = 1;
@@ -83,10 +84,20 @@ describe("CryptoZombies", function () {
     it("Should be able to levelUp a zombie", async () => {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
       await cryptoZombies.levelUp(firstZombieId, {
-        value: ethers.utils.parseEther("0.0005"),
+        value: ethers.utils.parseEther(defaultLevelUpFee),
       });
       const zombieData = await cryptoZombies.zombies(firstZombieId);
       expect(zombieData.level).to.be.equal(2);
+    });
+
+    it("Should be able to set levelUp fee", async () => {
+      const newFee = "1.5";
+      await cryptoZombies.setLevelUpFee(ethers.utils.parseEther(newFee));
+      await expect(
+        cryptoZombies.levelUp(firstZombieId, {
+          value: ethers.utils.parseEther(defaultLevelUpFee),
+        })
+      ).to.be.revertedWith("Not enough ether.");
     });
 
     it("Should not be able to levelUp with insufficient ether", async () => {

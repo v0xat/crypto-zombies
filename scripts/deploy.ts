@@ -12,10 +12,18 @@ async function main() {
 
   const CryptoZombies = await ethers.getContractFactory("CryptoZombies");
   const cryptoZombies = await CryptoZombies.deploy();
-
   await cryptoZombies.deployed();
 
   console.log("CryptoZombies deployed to:", cryptoZombies.address);
+
+  const CryptoKitties = await ethers.getContractFactory("KittyCore");
+  const cryptoKitties = await CryptoKitties.deploy();
+  await cryptoKitties.deployed();
+
+  console.log("CryptoKitties deployed to:", cryptoKitties.address);
+
+  // We also save the contract's artifacts and address in the frontend directory
+  saveFrontendFiles(cryptoZombies);
 }
 
 const saveFrontendFiles = (cryptoZombies: Contract) => {

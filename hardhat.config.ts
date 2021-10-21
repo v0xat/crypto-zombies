@@ -35,9 +35,10 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
-    // hardhat: {
-    //   loggingEnabled: true,
-    // },
+    hardhat: {
+      chainId: 31337,
+      // loggingEnabled: true,
+    },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
       accounts:

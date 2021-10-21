@@ -4,34 +4,45 @@ import { Contract } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
 describe("CryptoZombies", function () {
-  let cryptoZombies: Contract, cryptoKitties: Contract;
   let kittyContractAddress: string;
-  let owner: SignerWithAddress,
-    alice: SignerWithAddress,
-    bob: SignerWithAddress;
+  let cryptoZombies: Contract, cryptoKitties: Contract;
+  let owner: SignerWithAddress, alice: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
-  const defaultLevelUpFee = "0.0005";
+  // Define some test data to reduce code duplication
+  const customDna = 13371337;
+  const customName = "New Name";
+  const customWinProb = 90;
+  const dnaChangeLevel = 20;
+  const defaultLevelUpFee = ethers.utils.parseEther("0.0005");
+  const newLevelUpFee = ethers.utils.parseEther("1.5");
   const zombieNames = ["Stubbs", "Gary"];
   const firstZombieId = 0;
   const secondZombieId = 1;
-  const testKittyId: number = 1;
+  const testKittyId = 1;
 
+  // Deploying KittyCore once because its used only in few tests
   before(async () => {
-    [owner, alice, bob, ...addrs] = await ethers.getSigners();
+    [owner, alice, ...addrs] = await ethers.getSigners();
     const CryptoKitties = await ethers.getContractFactory("KittyCore");
     cryptoKitties = await CryptoKitties.deploy();
     await cryptoKitties.deployed();
     kittyContractAddress = cryptoKitties.address;
 
     // Creating a new cat to use it in further tests
-    await cryptoKitties.createPromoKitty(1234, owner.address);
+    const kittyGene = 1337;
+    await cryptoKitties.createPromoKitty(kittyGene, owner.address);
   });
 
+  // Deploy contract before each test
   beforeEach(async () => {
     const CryptoZombies = await ethers.getContractFactory("CryptoZombies");
     cryptoZombies = await CryptoZombies.deploy();
     await cryptoZombies.deployed();
+  });
+
+  it("Should set the right owner", async () => {
+    expect(await cryptoZombies.owner()).to.equal(owner.address);
   });
 
   describe("Creating a zombie", function () {
@@ -49,22 +60,63 @@ describe("CryptoZombies", function () {
     });
   });
 
+  describe("getZombiesByOwner", function () {
+    it("Should return correct list of user zombies", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      const zombiesByOwner = await cryptoZombies.getZombiesByOwner(
+        owner.address
+      );
+      expect(zombiesByOwner.length).to.be.equal(1);
+      expect(zombiesByOwner[0]).to.be.equal(firstZombieId);
+    });
+  });
+
+  describe("ownerOf", function () {
+    it("Should return address of zombie owner", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      const zombieOwner = await cryptoZombies.ownerOf(firstZombieId);
+      expect(zombieOwner).to.be.equal(owner.address);
+    });
+  });
+
+  describe("Withdraw", function () {
+    it("Non owner should not be able to call withdraw", async () => {
+      await expect(cryptoZombies.connect(alice).withdraw()).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      );
+    });
+
+    it("Withdraw works and changes owner balance", async () => {
+      // Creating a zombie and increase its level to add some ether in contract
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      await cryptoZombies.levelUp(firstZombieId, {
+        value: defaultLevelUpFee,
+      });
+
+      // Withdraw ether from contract to its owner
+      await expect(await cryptoZombies.withdraw()).to.changeEtherBalances(
+        [cryptoZombies, owner],
+        [-defaultLevelUpFee, defaultLevelUpFee]
+      );
+    });
+  });
+
   describe("Change Name", function () {
     it("Should be able to change zombie name", async () => {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
       // Call levelUp because we cant change name if zombie level is 1
       await cryptoZombies.levelUp(firstZombieId, {
-        value: ethers.utils.parseEther("0.0005"),
+        value: defaultLevelUpFee,
       });
-      await cryptoZombies.changeName(firstZombieId, "newName");
+      await cryptoZombies.changeName(firstZombieId, customName);
       const zombieData = await cryptoZombies.zombies(firstZombieId);
-      expect(zombieData.name).to.be.equal("newName");
+      expect(zombieData.name).to.be.equal(customName);
     });
 
     it("Should not be able to change zombie name below level 2", async () => {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
       await expect(
-        cryptoZombies.changeName(firstZombieId, "newName")
+        cryptoZombies.changeName(firstZombieId, customName)
       ).to.be.revertedWith("Zombie level is too low.");
     });
 
@@ -72,30 +124,82 @@ describe("CryptoZombies", function () {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
       // Call levelUp because we cant change name if zombie level is 1
       await cryptoZombies.levelUp(firstZombieId, {
-        value: ethers.utils.parseEther("0.0005"),
+        value: defaultLevelUpFee,
       });
       await expect(
-        cryptoZombies.connect(alice).changeName(firstZombieId, "newName")
+        cryptoZombies.connect(alice).changeName(firstZombieId, customName)
+      ).to.be.revertedWith("Not owner of a zombie.");
+    });
+  });
+
+  describe("Change DNA", function () {
+    it("Should be able to change zombie dna", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+
+      // Dna change available only on level 20
+      for (let i = 1; i < dnaChangeLevel; i += 1) {
+        await cryptoZombies.levelUp(firstZombieId, {
+          value: defaultLevelUpFee,
+        });
+      }
+
+      await cryptoZombies.changeDna(firstZombieId, customDna);
+      const zombieData = await cryptoZombies.zombies(firstZombieId);
+      expect(zombieData.dna).to.be.equal(customDna);
+    });
+
+    it("Should not be able to change zombie dna below level 20", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+
+      await expect(
+        cryptoZombies.changeName(firstZombieId, customDna)
+      ).to.be.revertedWith("Zombie level is too low.");
+    });
+
+    it("Non owner should not be able to change zombie dna", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+
+      // Dna change available only on level 20
+      for (let i = 1; i < dnaChangeLevel; i += 1) {
+        await cryptoZombies.levelUp(firstZombieId, {
+          value: defaultLevelUpFee,
+        });
+      }
+
+      await expect(
+        cryptoZombies.connect(alice).changeDna(firstZombieId, customDna)
       ).to.be.revertedWith("Not owner of a zombie.");
     });
   });
 
   describe("Level Up", function () {
-    it("Should be able to levelUp a zombie", async () => {
+    it("levelUp should work and change contract & caller balances", async () => {
       await cryptoZombies.createRandomZombie(zombieNames[0]);
+
+      // Zombie level changed
+      const zombieBeforeUp = await cryptoZombies.zombies(firstZombieId);
       await cryptoZombies.levelUp(firstZombieId, {
-        value: ethers.utils.parseEther(defaultLevelUpFee),
+        value: defaultLevelUpFee,
       });
-      const zombieData = await cryptoZombies.zombies(firstZombieId);
-      expect(zombieData.level).to.be.equal(2);
+      const zombieAfterUp = await cryptoZombies.zombies(firstZombieId);
+      expect(zombieAfterUp.level).to.be.equal(zombieBeforeUp.level + 1);
+
+      // Check levelUp changes balances
+      await expect(
+        await cryptoZombies.levelUp(firstZombieId, {
+          value: defaultLevelUpFee,
+        })
+      ).to.changeEtherBalances(
+        [cryptoZombies, owner],
+        [defaultLevelUpFee, -defaultLevelUpFee]
+      );
     });
 
     it("Should be able to set levelUp fee", async () => {
-      const newFee = "1.5";
-      await cryptoZombies.setLevelUpFee(ethers.utils.parseEther(newFee));
+      await cryptoZombies.setLevelUpFee(newLevelUpFee);
       await expect(
         cryptoZombies.levelUp(firstZombieId, {
-          value: ethers.utils.parseEther(defaultLevelUpFee),
+          value: defaultLevelUpFee,
         })
       ).to.be.revertedWith("Not enough ether.");
     });
@@ -126,12 +230,16 @@ describe("CryptoZombies", function () {
       // Increase the time by 1 day to skip cooldown after zombie creation
       await ethers.provider.send("evm_increaseTime", [86400]);
 
+      // Setting kitty contract address and feeding first created kitty
       await cryptoZombies.setKittyContractAddress(kittyContractAddress);
       const prevZombies = await cryptoZombies.ownerZombieCount(owner.address);
       await cryptoZombies.feedOnKitty(firstZombieId, testKittyId);
       const currZombies = await cryptoZombies.ownerZombieCount(owner.address);
 
-      await expect(currZombies.toNumber() - prevZombies.toNumber()).to.be.equal(1);
+      const expectedZombieChange = 1;
+      await expect(currZombies.toNumber() - prevZombies.toNumber()).to.be.equal(
+        expectedZombieChange
+      );
     });
 
     it("Should not be able to feed when on cooldown", async () => {
@@ -151,16 +259,14 @@ describe("CryptoZombies", function () {
 
   describe("Battle system", function () {
     it("Should be able to change attackVictoryProbability", async () => {
-      const newProb = 90;
-      await cryptoZombies.setAttackVictoryProbability(newProb);
+      await cryptoZombies.setAttackVictoryProbability(customWinProb);
       const attackProb = await cryptoZombies.attackVictoryProbability();
-      await expect(attackProb.toNumber()).to.be.equal(newProb);
+      await expect(attackProb.toNumber()).to.be.equal(customWinProb);
     });
 
     it("Non owner cannot change attackVictoryProbability", async () => {
-      const newProb = 90;
       await expect(
-        cryptoZombies.connect(alice).setAttackVictoryProbability(newProb)
+        cryptoZombies.connect(alice).setAttackVictoryProbability(customWinProb)
       ).to.be.reverted;
     });
 

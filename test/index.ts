@@ -79,6 +79,14 @@ describe("CryptoZombies", function () {
     });
   });
 
+  describe("balanceOf", function () {
+    it("Should return correct zombie token balance", async () => {
+      await cryptoZombies.createRandomZombie(zombieNames[0]);
+      const ownerBalance = await cryptoZombies.balanceOf(owner.address);
+      await expect(ownerBalance.toNumber()).to.be.equal(1);
+    });
+  });
+
   describe("Withdraw", function () {
     it("Non owner should not be able to call withdraw", async () => {
       await expect(cryptoZombies.connect(alice).withdraw()).to.be.revertedWith(
@@ -294,6 +302,18 @@ describe("CryptoZombies", function () {
         );
         const newOwner = await cryptoZombies.ownerOf(firstZombieId);
         expect(newOwner).to.equal(alice.address);
+      });
+      it("Should change balances after transfer", async () => {
+        await cryptoZombies.createRandomZombie(zombieNames[0]);
+        await cryptoZombies.transferFrom(
+          owner.address,
+          alice.address,
+          firstZombieId
+        );
+        const ownerBalance = await cryptoZombies.balanceOf(owner.address);
+        await expect(ownerBalance.toNumber()).to.be.equal(0);
+        const aliceBalance = await cryptoZombies.balanceOf(alice.address);
+        await expect(aliceBalance.toNumber()).to.be.equal(1);
       });
     });
 

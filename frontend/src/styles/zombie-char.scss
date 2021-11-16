@@ -1,0 +1,188 @@
+.zombie-loading {
+  background: url('/images/zombierun.png') left center;
+  background-size: cover;
+  height: 287px;
+  width: 192px;
+  position: absolute;
+  left: 16vh;
+  animation: play 0.7s steps(24) infinite;  
+}
+
+@keyframes play {
+   100% { background-position: -4608px; }
+}
+
+.zombie-preview {
+  height: 95vh;
+  width: 55vh;
+}
+
+.zombie-char {
+  position: relative;
+}
+
+.share-page .zombie-parts {
+  margin-left: 4vh;
+}
+
+.zombie-battle-component .zombie-parts {
+  margin-left: -1vh;
+}
+
+.zombie-parts {
+  position: relative;
+  margin-left: -2vh;
+  margin-top: 31vh;
+
+  .head {
+    width: 28vh;
+    position: absolute;
+    left: 13vh;
+    top: -4vh;
+  }
+
+  .eye {
+    width: 13vh;
+    position: absolute;
+    left: 23vh;
+    top: 8vh;
+  }
+
+
+  .shirt {
+    width: 13vh;
+    position: absolute;
+    left: 15.6vh;
+    top: 13vh;
+  }
+}
+
+
+.mouth {
+  width: 6vh;
+  position: absolute;
+  left: 26.6vh;
+  top: 15vh;
+}
+
+.torso {
+  width: 13vh;
+  position: absolute;
+  left: 15.6vh;
+  top: 13vh;
+}
+
+.left-thigh {
+  width: 6vh;
+  position: absolute;
+  left: 17.3vh;
+  top: 22vh;
+}
+
+.right-thigh {
+  width: 6vh;
+  position: absolute;
+  left: 20.4vh;
+  top: 22vh;
+}
+
+.cat-legs {
+  width: 10vh;
+  position: absolute;
+  left: 15.4vh;
+  top: 18vh;
+}
+
+.left-hand {
+  width: 4vh;
+  position: absolute;
+  left: 24.3vh;
+  top: 19vh;
+}
+
+.right-hand{
+  width: 4vh;
+  position: absolute;
+  left: 28.4vh;
+  top: 19vh;
+}
+
+.left-forearm {
+  width: 4vh;
+  position: absolute;
+  left: 22.3vh;
+  top: 20vh;
+}
+
+.right-forearm {
+  width: 4vh;  
+  position: absolute;
+  left: 26.4vh;
+  top: 20vh;
+
+}
+
+.left-upper-arm {
+  width: 6vh;
+  position: absolute;
+  left: 19.3vh;
+  top: 16vh;
+}
+
+.right-upper-arm {
+  width: 6vh;
+  position: absolute;
+  left: 23.4vh;
+  top: 16vh;
+}
+
+.left-leg {
+  width: 4vh;
+  position: absolute;
+  left: 18.3vh;
+  top: 27vh;
+}
+
+.right-leg {
+  width: 3.3vh;
+  position: absolute;
+  left: 22.3vh;
+  top: 27.6vh;
+}
+
+.left-feet {
+  width: 4vh;
+  position: absolute;
+  left: 18.3vh;
+  top: 30vh;
+}
+
+.right-feet {
+  width: 3.3vh;
+  position: absolute;
+  left: 22.3vh;
+  top: 30.3vh;
+}
+
+
+.zombie-name {
+  text-transform: uppercase;
+  font-weight: bold;
+  text-shadow: 5px 5px 5px rgba(0,0,0,0.2)
+}
+
+.zombie-details {
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  width: 300px;
+  margin-left: -150px;
+  text-align: center;
+  font-size: 24px;
+  color: white;
+  font-weight: bold;
+}
+
+.zombie-name {
+  font-weight: bold;
+}

@@ -7,6 +7,7 @@ import contractAddress from "../contracts/contract-address.json";
 import NoWalletDetected from "./NoWalletDetected";
 import ConnectWallet from "./ConnectWallet";
 import CreateZombie from "./CreateZombie";
+import ZombieChar from "./ZombieChar";
 import Loading from "./Loading";
 
 const HARDHAT_NETWORK_ID = '31337';
